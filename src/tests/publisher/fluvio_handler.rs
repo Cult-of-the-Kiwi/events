@@ -17,7 +17,7 @@ async fn test<T: AsyncFnOnce(FluvioHandler<Event>) -> anyhow::Result<()>>(
     test: T,
 ) -> anyhow::Result<()> {
     sleep(Duration::from_millis(TEST_TIMEOUT)).await;
-    let handler: FluvioHandler<Event> = FluvioHandler::new().await.unwrap();
+    let handler: FluvioHandler<Event> = FluvioHandler::new().unwrap();
     handler.reset_fluvio().await.unwrap();
 
     test(handler).await

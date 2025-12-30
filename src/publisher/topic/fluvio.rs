@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use fluvio::{
-    Fluvio, FluvioClusterConfig, Offset, RecordKey, TopicProducer,
-    consumer::ConsumerConfigExtBuilder, metadata::topic::TopicSpec, spu::SpuSocketPool,
+    Fluvio, Offset, RecordKey, TopicProducer, consumer::ConsumerConfigExtBuilder,
+    metadata::topic::TopicSpec, spu::SpuSocketPool,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{from_slice, to_vec};
@@ -40,18 +40,14 @@ enum Error {
 }
 
 pub struct FluvioHandler<T: TypedEvent> {
-    fluvio: Fluvio,
     subscribers: SubscriberMap<T>,
     receivers: ReceiversMap,
     producers: RwLock<ProducerMap>,
 }
 
 impl<T: TypedEvent> FluvioHandler<T> {
-    pub async fn new() -> anyhow::Result<Self> {
+    pub fn new() -> anyhow::Result<Self> {
         Ok(Self {
-            fluvio: Fluvio::connect()
-                .await
-                .map_err(|e| Error::ErrorConnectingToFluvio(e))?,
             subscribers: Default::default(),
             receivers: Default::default(),
             producers: Default::default(),
@@ -60,7 +56,7 @@ impl<T: TypedEvent> FluvioHandler<T> {
 
     #[cfg(test)]
     pub(crate) async fn reset_fluvio(&self) -> anyhow::Result<()> {
-        let admin = self.fluvio.admin().await;
+        let admin = fluvio().await?.admin().await;
 
         let topics = admin
             .all::<TopicSpec>()
@@ -106,7 +102,7 @@ where
         let mut lock = self.receivers.write().await;
         lock.entry(event.event_topic())
             .or_insert(
-                new_topic_reader::<T>(&event, &self.subscribers, &self.fluvio)
+                new_topic_reader::<T>(&event, &self.subscribers, &fluvio().await?)
                     .await
                     .map_err(|e| Error::InternalError(e))?,
             )
@@ -132,8 +128,9 @@ where
     async fn notify(&self, event: Self::Event) -> anyhow::Result<()> {
         let mut binding = self.producers.write().await;
         let producer = binding.entry(event.event_topic()).or_insert({
-            try_create_topic(&self.fluvio, event.event_topic()).await?;
-            self.fluvio
+            try_create_topic(event.event_topic()).await?;
+            fluvio()
+                .await?
                 .topic_producer(event.event_topic())
                 .await
                 .map_err(|e| Error::ErrorCreatingProducer(e))?
@@ -157,7 +154,7 @@ where
     let subscribers = subscribers.clone();
     let topic = event.event_topic();
 
-    try_create_topic(fluvio, &topic).await?;
+    try_create_topic(&topic).await?;
 
     //FIXME This should be modificable from the outside
     let consumer_config = ConsumerConfigExtBuilder::default()
@@ -192,7 +189,8 @@ where
     Ok((0, handle))
 }
 
-async fn try_create_topic(fluvio: &Fluvio, topic: &str) -> anyhow::Result<()> {
+async fn try_create_topic(topic: &str) -> anyhow::Result<()> {
+    let fluvio = fluvio().await?;
     let admin = fluvio.admin().await;
 
     let topics = admin
@@ -213,4 +211,10 @@ async fn try_create_topic(fluvio: &Fluvio, topic: &str) -> anyhow::Result<()> {
     }
 
     Ok(())
+}
+
+async fn fluvio() -> anyhow::Result<Fluvio> {
+    Ok(Fluvio::connect()
+        .await
+        .map_err(|e| Error::ErrorConnectingToFluvio(e))?)
 }
