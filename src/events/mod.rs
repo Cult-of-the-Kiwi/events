@@ -9,7 +9,7 @@ use crate::{
     },
     publisher::{
         TypedEvent,
-        topic::{TopicEvent, fluvio::KeyEvent},
+        topic::{KeyEvent, TopicEvent},
     },
 };
 
@@ -56,7 +56,7 @@ impl TopicEvent for Event {
 }
 
 impl KeyEvent for Event {
-    fn event_key(&self) -> fluvio::RecordKey {
+    fn event_key(&self) -> Option<Vec<u8>> {
         self.inner().event_key()
     }
 }

@@ -14,23 +14,33 @@ jobs:
 
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v3
+              uses: actions/checkout@v6
 
             - name: Install Fluvio CLI
               run: |
-                  curl -fsS https://hub.infinyon.cloud/install/install.sh | bash
+                  curl -fsS https://raw.githubusercontent.com/fluvio-community/fluvio/master/install.sh | FVM_VERSION=dev bash
                   echo "$HOME/.fluvio/bin" >> $GITHUB_PATH
 
             - name: Start Fluvio
               run: |
                   fluvio cluster start
 
+            - name: Start Kafka
+              run: |
+                  docker run --detach --name kafka --publish 9092:9092 apache/kafka:3.9.1
+
+            - name: Wait for Kafka
+              run: |
+                  if ! timeout 60 bash -c 'until docker exec kafka /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list; do sleep 2; done'; then
+                      docker logs kafka
+                      exit 1
+                  fi
+
             - name: Install Rust toolchain
-              if: steps.check_dir.outputs.skip == 'false'
               run: |
                   curl https://sh.rustup.rs -sSf | sh -s -- -y
                   source $HOME/.cargo/env
                   rustup default stable
 
             - name: Run tests
-              run: cargo test -- --nocapture
+              run: cargo test --all-features -- --nocapture

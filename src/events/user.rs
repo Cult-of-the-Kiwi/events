@@ -1,11 +1,10 @@
-use fluvio::RecordKey;
 use serde::{Deserialize, Serialize};
 
 use crate::{
     events::EventType,
     publisher::{
         TypedEvent,
-        topic::{TopicEvent, fluvio::KeyEvent},
+        topic::{KeyEvent, TopicEvent},
     },
 };
 
@@ -58,8 +57,8 @@ impl TopicEvent for UserEventType {
 }
 
 impl KeyEvent for UserEvent {
-    fn event_key(&self) -> fluvio::RecordKey {
-        RecordKey::NULL
+    fn event_key(&self) -> Option<Vec<u8>> {
+        None
     }
 }
 

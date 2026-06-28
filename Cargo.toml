@@ -3,16 +3,22 @@ name = "devcord_events"
 version = "1.0.0"
 edition = "2024"
 
+[features]
+default = ["fluvio"]
+fluvio = ["dep:fluvio", "dep:thiserror", "dep:tokio-stream"]
+kafka = ["dep:rdkafka", "dep:uuid"]
+
 [dependencies]
 anyhow = "1.0.100"
 async-trait = "0.1.89"
-fluvio = "0.50.1"
+fluvio = { version = "0.50.1", optional = true }
+rdkafka = { version = "0.39.0", optional = true }
 serde = { version = "1.0.226", features = ["derive"] }
 serde_json = "1.0.145"
 serial_test = "3.2.0"
 testcontainers = "0.25.0"
-thiserror = "2.0.16"
+thiserror = { version = "2.0.16", optional = true }
 tokio = {version = "1.47.1", features = ["sync"] }
-tokio-stream = "0.1.17"
+tokio-stream = { version = "0.1.17", optional = true }
 tracing = "0.1.41"
-uuid = {version = "1.18.1", features = ["v4"] }
+uuid = { version = "1.18.1", features = ["v4"], optional = true }
