@@ -1,11 +1,10 @@
-use fluvio::RecordKey;
 use serde::{Deserialize, Serialize};
 
 use crate::{
     events::EventType,
     publisher::{
         TypedEvent,
-        topic::{TopicEvent, fluvio::KeyEvent},
+        topic::{KeyEvent, TopicEvent},
     },
 };
 
@@ -61,11 +60,11 @@ impl TopicEvent for AuthEvent {
 }
 
 impl KeyEvent for AuthEvent {
-    fn event_key(&self) -> fluvio::RecordKey {
+    fn event_key(&self) -> Option<Vec<u8>> {
         match self {
-            AuthEvent::UserSignedUpEvent(_) => RecordKey::NULL,
-            AuthEvent::UserLoggedInEvent(_) => RecordKey::NULL,
-            AuthEvent::UserLoggedOutEvent(_) => RecordKey::NULL,
+            AuthEvent::UserSignedUpEvent(_) => None,
+            AuthEvent::UserLoggedInEvent(_) => None,
+            AuthEvent::UserLoggedOutEvent(_) => None,
         }
     }
 }

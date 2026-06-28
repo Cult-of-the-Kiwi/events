@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use fluvio::{
-    Fluvio, FluvioClusterConfig, Offset, RecordKey, TopicProducer,
-    consumer::ConsumerConfigExtBuilder, metadata::topic::TopicSpec, spu::SpuSocketPool,
+    Fluvio, Offset, RecordKey, TopicProducer, consumer::ConsumerConfigExtBuilder,
+    metadata::topic::TopicSpec, spu::SpuSocketPool,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{from_slice, to_vec};
@@ -15,6 +15,8 @@ use crate::publisher::{
     EventManager, EventSubscriberHdlrFn, TypedEvent,
     topic::{Topic, TopicEvent},
 };
+
+pub use super::KeyEvent;
 
 type SubscriberMap<T> =
     Arc<RwLock<HashMap<<T as TypedEvent>::EventType, EventSubscriberHdlrFn<T>>>>;
@@ -77,10 +79,6 @@ impl<T: TypedEvent> FluvioHandler<T> {
     }
 }
 
-pub trait KeyEvent {
-    fn event_key(&self) -> RecordKey;
-}
-
 #[async_trait]
 impl<T> EventManager for FluvioHandler<T>
 where
@@ -138,8 +136,9 @@ where
                 .await
                 .map_err(|e| Error::ErrorCreatingProducer(e))?
         });
+        let key = event.event_key().map_or(RecordKey::NULL, RecordKey::from);
         producer
-            .send(event.event_key(), to_vec(&event)?)
+            .send(key, to_vec(&event)?)
             .await
             .map_err(|e| Error::InternalError(e))?;
         Ok(())

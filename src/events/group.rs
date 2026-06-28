@@ -1,11 +1,10 @@
-use fluvio::RecordKey;
 use serde::{Deserialize, Serialize};
 
 use crate::{
     events::EventType,
     publisher::{
         TypedEvent,
-        topic::{TopicEvent, fluvio::KeyEvent},
+        topic::{KeyEvent, TopicEvent},
     },
 };
 
@@ -71,12 +70,12 @@ impl TopicEvent for GroupEventType {
 }
 
 impl KeyEvent for GroupEvent {
-    fn event_key(&self) -> fluvio::RecordKey {
+    fn event_key(&self) -> Option<Vec<u8>> {
         match self {
-            GroupEvent::GroupCreatedEvent(_) => RecordKey::NULL,
-            GroupEvent::GroupDeletedEvent(_) => RecordKey::NULL,
-            GroupEvent::GroupUserAddedEvent(_) => RecordKey::NULL,
-            GroupEvent::GroupUserRemovedEvent(_) => RecordKey::NULL,
+            GroupEvent::GroupCreatedEvent(_) => None,
+            GroupEvent::GroupDeletedEvent(_) => None,
+            GroupEvent::GroupUserAddedEvent(_) => None,
+            GroupEvent::GroupUserRemovedEvent(_) => None,
         }
     }
 }
