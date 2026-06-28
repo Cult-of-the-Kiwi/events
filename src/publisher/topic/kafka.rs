@@ -37,7 +37,7 @@ type ProducerMap = HashMap<Topic, FutureProducer>;
 
 const DEFAULT_BOOTSTRAP_SERVERS: &str = "localhost:9092";
 const DELIVERY_TIMEOUT: Duration = Duration::from_secs(5);
-const SUBSCRIPTION_TIMEOUT: Duration = Duration::from_secs(5);
+const SUBSCRIPTION_TIMEOUT: Duration = Duration::from_secs(10);
 const TOPIC_PARTITIONS: i32 = 1;
 const TOPIC_REPLICATION_FACTOR: i32 = 1;
 
