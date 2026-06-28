@@ -1,11 +1,10 @@
-use fluvio::RecordKey;
 use serde::{Deserialize, Serialize};
 
 use crate::{
     events::EventType,
     publisher::{
         TypedEvent,
-        topic::{TopicEvent, fluvio::KeyEvent},
+        topic::{KeyEvent, TopicEvent},
     },
 };
 
@@ -43,9 +42,9 @@ impl TopicEvent for MessageEventType {
 }
 
 impl KeyEvent for MessageEvent {
-    fn event_key(&self) -> fluvio::RecordKey {
+    fn event_key(&self) -> Option<Vec<u8>> {
         match self {
-            MessageEvent::MessageSentEvent(_) => RecordKey::NULL,
+            MessageEvent::MessageSentEvent(_) => None,
         }
     }
 }

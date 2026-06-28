@@ -15,7 +15,10 @@ use crate::{
     publisher::EventManager,
 };
 
+#[cfg(feature = "fluvio")]
 mod fluvio_handler;
+#[cfg(feature = "kafka")]
+mod kafka_handler;
 
 async fn subscribe_receiver<T: EventManager<Event = Event>>(
     publisher: &T,

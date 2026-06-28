@@ -16,6 +16,8 @@ use crate::publisher::{
     topic::{Topic, TopicEvent},
 };
 
+pub use super::KeyEvent;
+
 type SubscriberMap<T> =
     Arc<RwLock<HashMap<<T as TypedEvent>::EventType, EventSubscriberHdlrFn<T>>>>;
 type ProducerMap = HashMap<Topic, TopicProducer<SpuSocketPool>>;
@@ -71,10 +73,6 @@ impl<T: TypedEvent> FluvioHandler<T> {
 
         Ok(())
     }
-}
-
-pub trait KeyEvent {
-    fn event_key(&self) -> RecordKey;
 }
 
 #[async_trait]
@@ -135,8 +133,9 @@ where
                 .await
                 .map_err(|e| Error::ErrorCreatingProducer(e))?
         });
+        let key = event.event_key().map_or(RecordKey::NULL, RecordKey::from);
         producer
-            .send(event.event_key(), to_vec(&event)?)
+            .send(key, to_vec(&event)?)
             .await
             .map_err(|e| Error::InternalError(e))?;
         Ok(())
